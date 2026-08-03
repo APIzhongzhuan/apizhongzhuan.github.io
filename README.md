@@ -6,7 +6,8 @@
 
 - 首页标题固定为“AI 中转站推荐”
 - 最多展示 360 家站点，每页 40 家
-- 每 5 个相邻站点组成一个档位，仅在档位内做确定性轻量轮换
+- 每 10 个相邻站点组成一个档位，在档位内做确定性稳定洗牌
+- 卡片简介由结构化指标重新生成，不直接复用数据快照中的描述原文
 - GPT、Claude、Codex、Gemini、DeepSeek、Qwen、Kimi 静态专题页
 - Canonical、Open Graph、Twitter Card、JSON-LD、FAQ、分页关系、robots.txt 和 sitemap.xml
 - 无客户端 JavaScript，完整内容直接写入 HTML

@@ -28,7 +28,7 @@ const FAQ = [
   ["AI 中转站是什么？", "AI 中转站位于用户应用和模型厂商 API 之间，通常提供统一鉴权、人民币充值、多模型路由、余额结算和兼容接口。它降低了接入门槛，但也增加了一层第三方服务与数据处理链路。"],
   ["AI 中转站怎么选？", "先确认需要的模型与协议，再用小额充值测试真实任务。重点比较高峰期成功率、首字延迟、上下文长度、工具调用、缓存、账单明细、退款规则和运营稳定性，不要只看一次测速或最低倍率。"],
   ["排名靠前就一定更好吗？", "不一定。榜单用于缩小候选范围，不代替具体场景验收。同档位站点的指标差异可能很小，编程、长文本、多模态和企业使用也会有不同优先级。"],
-  ["为什么榜单顺序会轻微变化？", "站点先按公开目录的综合序筛选，再在每五个相邻站点组成的同档位内按数据日期做轻量轮换。这样既保留总体质量层级，也避免把细小差异误解成永久且绝对的名次。"],
+  ["为什么榜单顺序会发生变化？", "站点先按公开目录的综合序筛选，再在每十个相邻站点组成的同档位内按数据日期稳定打乱。这样既保留总体质量层级，也让展示顺序与原始数据产生明显区别，避免把细小差异误解成永久且绝对的名次。"],
   ["低倍率等于官方价格打折吗？", "不一定。实际成本还取决于余额兑换比例、输入输出分别计费、缓存费用、分组倍率和套餐规则。比较价格时应以同一组请求的最终账单为准。"],
   ["使用中转站有哪些风险？", "常见风险包括上游变化、模型映射不透明、余额无法退回、日志留存、限流、账号池波动和服务停止。敏感数据与关键业务更适合官方 API 或可审计的合规服务。"],
   ["如何判断模型是否被替换？", "不要只依赖模型自报身份。应准备固定测试集，长期比较上下文、工具调用、结构化输出、视觉能力、响应特征与账单，并在异常时保留请求 ID 复测。"],
@@ -130,13 +130,16 @@ function hash(text) {
 
 function rotateWithinTiers(sites, seed) {
   const result = [];
-  for (let start = 0; start < sites.length; start += 5) {
-    const group = sites.slice(start, start + 5);
-    if (group.length > 2) {
-      const mode = hash(`${seed}:${start}`) % 4;
-      if (mode === 0 && group.length > 2) [group[1], group[2]] = [group[2], group[1]];
-      if (mode === 1 && group.length > 4) [group[3], group[4]] = [group[4], group[3]];
-      if (mode === 2 && group.length > 3) [group[2], group[3]] = [group[3], group[2]];
+  for (let start = 0; start < sites.length; start += 10) {
+    const group = sites.slice(start, start + 10);
+    let state = hash(`${seed}:${start}:ranking`);
+    for (let index = group.length - 1; index > 0; index -= 1) {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      const target = state % (index + 1);
+      [group[index], group[target]] = [group[target], group[index]];
+    }
+    if (group.length > 1 && group.every((site, index) => site.sourceRank === start + index + 1)) {
+      [group[0], group[1]] = [group[1], group[0]];
     }
     result.push(...group);
   }
@@ -153,7 +156,20 @@ function pagePath(page) { return page === 1 ? "/" : `/page/${page}/`; }
 function formatUptime(value) { return value === null ? "待补充" : `${formatter.format(value)}%`; }
 function formatLatency(value) { return value === null ? "待补充" : value >= 1000 ? `${formatter.format(value / 1000)} 秒` : `${Math.round(value)} ms`; }
 function yesNo(value) { return value === true ? "支持" : value === false ? "不支持" : "待确认"; }
-function trimText(value, size = 132) { return value.length > size ? `${value.slice(0, size).trim()}…` : value; }
+function rewrittenDescription(site) {
+  const models = site.models.slice(0, 4);
+  const modelText = models.length ? models.join("、") : `${site.modelCount || "多"} 类模型`;
+  const availability = site.uptime === null ? "在线率仍待更多样本补充" : `当前记录在线率为 ${formatUptime(site.uptime)}`;
+  const latency = site.latencyMs === null ? "延迟数据暂不完整" : `平均延迟约 ${formatLatency(site.latencyMs)}`;
+  const policy = site.supportsRefund === true ? "已标注支持退款" : site.supportsRefund === false ? "已标注不支持退款" : "退款规则需要另行确认";
+  const templates = [
+    `${site.name} 已进入本期候选榜单，公开字段显示其覆盖 ${modelText} 等服务，${availability}，${latency}。${policy}，建议充值前再用真实任务核对接口和计费。`,
+    `从当前收录信息看，${site.name} 提供 ${modelText} 等模型入口；${availability}，${latency}。榜单仅作初筛，建议先小额测试高峰期稳定性，并确认${site.supportsInvoice === true ? "发票与" : "计费和"}售后条款。`,
+    `${site.name} 的公开资料被整理为多模型 API 服务候选，已记录 ${site.modelCount} 个模型，主要标签包括 ${modelText}。${availability}，${policy}，实际使用前应复测长任务、并发和账单明细。`,
+    `本页基于结构化字段重新概括 ${site.name}：模型范围包含 ${modelText}，${availability}，${latency}。这些指标不能替代实测，推荐用固定任务对比模型版本、响应质量与余额规则。`
+  ];
+  return templates[hash(site.name) % templates.length];
+}
 
 function icon(name) {
   const paths = {
@@ -220,7 +236,7 @@ function renderCard(site) {
   const rating = site.userRating !== null && site.ratingCount > 0 ? `${formatter.format(site.userRating)} / 5` : "暂无评分";
   return `<article class="station-card" id="rank-${site.rank}" data-source-rank="${site.sourceRank}">
   <div class="card-top"><span class="rank-number">${String(site.rank).padStart(2, "0")}</span><div class="station-title"><p>推荐序 ${site.rank}</p><h2 title="${escapeHtml(site.name)}">${escapeHtml(site.name)}</h2></div><span class="status-dot"><i></i>${site.uptime !== null && site.uptime >= 99 ? "高可用" : "已收录"}</span></div>
-  <p class="station-description">${escapeHtml(trimText(site.description || `${site.name} 已进入 AI 中转站公开目录，建议在充值前核对模型、价格、服务条款和退款政策。`))}</p>
+  <p class="station-description">${escapeHtml(rewrittenDescription(site))}</p>
   <div class="model-tags" aria-label="模型标签">${modelTags}</div>
   <dl class="metric-grid"><div><dt>在线率</dt><dd>${formatUptime(site.uptime)}</dd></div><div><dt>平均延迟</dt><dd>${formatLatency(site.latencyMs)}</dd></div><div><dt>用户评分</dt><dd>${rating}</dd></div><div><dt>收录模型</dt><dd>${site.modelCount} 个</dd></div></dl>
   <div class="policy-row"><span>退款：${yesNo(site.supportsRefund)}</span><span>发票：${yesNo(site.supportsInvoice)}</span>${site.establishedDate ? `<span>成立：${site.establishedDate}</span>` : ""}</div>
@@ -253,7 +269,7 @@ function renderTopics(sites) {
 }
 
 function renderMethod() {
-  return `<section class="section method-section" id="method" aria-labelledby="method-title"><div class="section-heading"><p>METHODOLOGY</p><h2 id="method-title">排名与更新说明</h2><span>排名用于建立候选集，不把有限公开指标包装成绝对评测。</span></div><div class="method-grid"><article><span>${icon("chart")}</span><h3>数据筛选</h3><p>同步公开目录后按原始综合序取前 360 条，验证名称、链接和基础字段。页面不会展示超过 360 家站点。</p></article><article><span>${icon("shield")}</span><h3>轻量轮换</h3><p>每五个相邻站点视为同一档位，只在档位内部按数据日期交换少量位置。原始大层级不变，榜单不会完全随机。</p></article><article><span>${icon("clock")}</span><h3>定时更新</h3><p>GitHub Actions 每天运行两次。同步失败时继续使用上一份已验证快照，避免空页面和损坏数据被部署。</p></article></div></section>`;
+  return `<section class="section method-section" id="method" aria-labelledby="method-title"><div class="section-heading"><p>METHODOLOGY</p><h2 id="method-title">排名与更新说明</h2><span>排名用于建立候选集，不把有限公开指标包装成绝对评测。</span></div><div class="method-grid"><article><span>${icon("chart")}</span><h3>数据筛选</h3><p>同步公开目录后按原始综合序取前 360 条，验证名称、链接和基础字段。页面不会展示超过 360 家站点。</p></article><article><span>${icon("shield")}</span><h3>同档打乱</h3><p>每十个相邻站点视为同一档位，并在档位内部按数据日期稳定洗牌。原始大层级不变，但展示顺序不会与 data.json 完全相同。</p></article><article><span>${icon("clock")}</span><h3>定时更新</h3><p>GitHub Actions 每天运行两次。同步失败时继续使用上一份已验证快照，避免空页面和损坏数据被部署。</p></article></div></section>`;
 }
 
 function renderGuide() {
@@ -282,7 +298,10 @@ function renderRankingPage({ page, totalPages, pageSites, allSites, updatedDate 
   const title = page === 1 ? "AI 中转站推荐" : `AI 中转站推荐第 ${page} 页 - 排名 ${first} 至 ${last}`;
   const description = page === 1 ? `AI 中转站推荐与 API 中转站排名，静态展示最多 ${allSites.length} 家站点，覆盖 GPT、Claude、Codex、Gemini、DeepSeek 等模型，包含在线率、延迟、评分、退款和发票信息。` : `AI 中转站推荐第 ${page} 页，展示推荐序 ${first} 至 ${last} 的 API 中转站，逐项比较模型数量、在线率、平均延迟、用户评分、退款与发票政策，并提供静态 HTML 资料入口和选择提醒。`;
   const graph = baseGraph({ canonical, title, description, updatedDate, sites: pageSites, page, breadcrumb: page === 1 ? [{ name: "AI 中转站推荐", url: canonical }] : [{ name: "AI 中转站推荐", url: `${ORIGIN}/` }, { name: `第 ${page} 页`, url: canonical }] });
-  return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, prev: page > 1 ? pageUrl(page - 1) : "", next: page < totalPages ? pageUrl(page + 1) : "", graph })}<body>${header("ranking")}<main id="main-content"><div class="page-gutter">${page === 1 ? renderHero(siteStats(allSites), updatedDate) + renderTopics(allSites) + renderMethod() + renderGuide() : `<nav class="breadcrumbs" aria-label="面包屑"><a href="/">AI 中转站推荐</a><span>/</span><span aria-current="page">第 ${page} 页</span></nav><section class="page-intro"><p>RANKING PAGE ${page}</p><h1>AI 中转站推荐第 ${page} 页</h1><span>推荐序 ${first}–${last}，数据日期 ${updatedDate}</span></section>`}<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>STATIC HTML RANKING</p><h2 id="ranking-title">${page === 1 ? "AI API 中转站排名" : `推荐序 ${first}–${last}`}</h2><span>每页 ${PAGE_SIZE} 家，全部内容直接写入 HTML，搜索引擎和无脚本环境均可完整读取。</span></div><div class="ranking-note"><i></i><span>当前为第 ${page}/${totalPages} 页</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>${page === 1 ? renderFaq() : ""}</div></main>${footer(updatedDate)}</body></html>`;
+  const pageOpening = page === 1 ? renderHero(siteStats(allSites), updatedDate) : `<nav class="breadcrumbs" aria-label="面包屑"><a href="/">AI 中转站推荐</a><span>/</span><span aria-current="page">第 ${page} 页</span></nav><section class="page-intro"><p>RANKING PAGE ${page}</p><h1>AI 中转站推荐第 ${page} 页</h1><span>推荐序 ${first}–${last}，数据日期 ${updatedDate}</span></section>`;
+  const ranking = `<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>STATIC HTML RANKING</p><h2 id="ranking-title">${page === 1 ? "AI API 中转站排名" : `推荐序 ${first}–${last}`}</h2><span>每页 ${PAGE_SIZE} 家，全部内容直接写入 HTML，搜索引擎和无脚本环境均可完整读取。</span></div><div class="ranking-note"><i></i><span>当前为第 ${page}/${totalPages} 页</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>`;
+  const pageClosing = page === 1 ? renderTopics(allSites) + renderMethod() + renderGuide() + renderFaq() : "";
+  return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, prev: page > 1 ? pageUrl(page - 1) : "", next: page < totalPages ? pageUrl(page + 1) : "", graph })}<body>${header("ranking")}<main id="main-content"><div class="page-gutter">${pageOpening}${ranking}${pageClosing}</div></main>${footer(updatedDate)}</body></html>`;
 }
 
 function renderTopicPage({ topic, matches, updatedDate }) {

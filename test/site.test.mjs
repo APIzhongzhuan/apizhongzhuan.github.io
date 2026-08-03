@@ -42,15 +42,50 @@ test("static ranking displays no more than 360 unique sites", async () => {
   assert.deepEqual(ranks, Array.from({ length: totalSites }, (_, index) => index + 1));
 });
 
-test("ranking only rotates within five-site source tiers", async () => {
+test("ranking is shuffled while staying within ten-site source tiers", async () => {
+  const sourceRanks = [];
   for (let page = 1; page <= totalPages; page += 1) {
     const html = await htmlFor(page);
     for (const match of html.matchAll(/id="rank-(\d+)" data-source-rank="(\d+)"/g)) {
       const display = Number(match[1]);
       const source = Number(match[2]);
-      assert.equal(Math.floor((display - 1) / 5), Math.floor((source - 1) / 5));
+      assert.equal(Math.floor((display - 1) / 10), Math.floor((source - 1) / 10));
+      sourceRanks.push(source);
     }
   }
+  assert.notDeepEqual(sourceRanks, Array.from({ length: totalSites }, (_, index) => index + 1));
+});
+
+test("homepage ranking appears before explanatory sections", async () => {
+  const html = await htmlFor(1);
+  const ranking = html.indexOf('id="ranking"');
+  const topics = html.indexOf('class="section topics-section"');
+  const method = html.indexOf('id="method"');
+  const guide = html.indexOf('id="guide"');
+  assert.ok(ranking > 0 && ranking < topics && topics < method && method < guide);
+});
+
+test("visible station descriptions are rewritten instead of copied from data", async () => {
+  const byRank = new Map(data.sites.slice(0, totalSites).map((site) => [Number(site.rank), String(site.description || "").replace(/\s+/g, " ").trim()]));
+  for (let page = 1; page <= totalPages; page += 1) {
+    const html = await htmlFor(page);
+    const cards = [...html.matchAll(/data-source-rank="(\d+)"[\s\S]*?<p class="station-description">([\s\S]*?)<\/p>/g)];
+    for (const match of cards) {
+      const source = byRank.get(Number(match[1])) || "";
+      const visible = match[2].replace(/<[^>]+>/g, "").replaceAll("&amp;", "&").replaceAll("&quot;", '"').replaceAll("&#039;", "'").trim();
+      if (source) {
+        assert.notEqual(visible, source);
+        assert.ok(!source.startsWith(visible) && !visible.startsWith(source.slice(0, Math.min(80, source.length))));
+      }
+    }
+  }
+});
+
+test("all explicit pixel font sizes are at least 14px", async () => {
+  const css = await readFile(path.join(root, "assets", "styles.css"), "utf8");
+  const sizes = [...css.matchAll(/font-size:\s*([0-9.]+)px/g)].map((match) => Number(match[1]));
+  assert.ok(sizes.length > 0);
+  assert.ok(sizes.every((size) => size >= 14), `found font sizes below 14px: ${sizes.filter((size) => size < 14).join(", ")}`);
 });
 
 test("every indexable page has unique SEO metadata and valid structured data", async () => {
