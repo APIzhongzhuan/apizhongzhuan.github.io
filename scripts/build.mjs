@@ -9,24 +9,25 @@ const PAGE_ROOT = path.join(ROOT, "page");
 const TOPIC_ROOT = path.join(ROOT, "topics");
 const SOURCE_URL = process.env.DATA_SOURCE_URL || "https://raw.githubusercontent.com/hvoyai/awesome-ai-api/main/data.json";
 const ORIGIN = "https://apizhongzhuan.github.io";
+const SITE_NAME = "API中转站介绍和推荐";
 const MAX_SITES = 360;
 const PAGE_SIZE = 40;
 const SHOULD_SYNC = process.argv.includes("--sync");
 const formatter = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 1 });
 
 const TOPICS = [
-  { slug: "gpt", label: "GPT 中转站", terms: ["gpt", "openai", "chatgpt"], intro: "适合 OpenAI 兼容接口、Responses API、工具调用与多模态任务。选择时应核对具体模型版本、上下文长度、缓存计费和接口兼容性。" },
-  { slug: "claude", label: "Claude 中转站", terms: ["claude", "anthropic"], intro: "适合长文本、代码与 Agent 任务。重点测试 Anthropic 原生协议、Prompt Caching、工具调用、长输出稳定性和模型映射。" },
-  { slug: "codex", label: "Codex 中转站", terms: ["codex"], intro: "面向编程 Agent 与仓库级任务。普通对话可用不代表长任务稳定，建议测试工具调用、并发、缓存和错误恢复。" },
-  { slug: "gemini", label: "Gemini 中转站", terms: ["gemini"], intro: "适合多模态、长上下文和文档处理。需要区分 Gemini 原生接口与 OpenAI 兼容接口，并核对安全过滤和文件能力。" },
-  { slug: "deepseek", label: "DeepSeek 中转站", terms: ["deepseek", "深度求索"], intro: "适合推理、中文与代码任务。应关注高峰期稳定性、思考模型输出、上下文限制以及输入输出的实际计费规则。" },
-  { slug: "qwen", label: "Qwen 中转站", terms: ["qwen", "通义", "千问", "阿里云"], intro: "覆盖通义千问文本、代码与多模态模型。选择时应区分不同尺寸、用途、协议和上下文限制。" },
-  { slug: "kimi", label: "Kimi 中转站", terms: ["kimi", "moonshot", "月之暗面"], intro: "适合中文长文本和文件场景。需要确认 Kimi 与 Moonshot 模型映射、文件能力、工具调用和超长上下文计费。" }
+  { slug: "gpt", label: "GPT API 中转站", terms: ["gpt", "openai", "chatgpt"], intro: "适合 OpenAI 兼容接口、Responses API、工具调用与多模态任务。选择时应核对具体模型版本、上下文长度、缓存计费和接口兼容性。" },
+  { slug: "claude", label: "Claude API 中转站", terms: ["claude", "anthropic"], intro: "适合长文本、代码与 Agent 任务。重点测试 Anthropic 原生协议、Prompt Caching、工具调用、长输出稳定性和模型映射。" },
+  { slug: "codex", label: "Codex API 中转站", terms: ["codex"], intro: "面向编程 Agent 与仓库级任务。普通对话可用不代表长任务稳定，建议测试工具调用、并发、缓存和错误恢复。" },
+  { slug: "gemini", label: "Gemini API 中转站", terms: ["gemini"], intro: "适合多模态、长上下文和文档处理。需要区分 Gemini 原生接口与 OpenAI 兼容接口，并核对安全过滤和文件能力。" },
+  { slug: "deepseek", label: "DeepSeek API 中转站", terms: ["deepseek", "深度求索"], intro: "适合推理、中文与代码任务。应关注高峰期稳定性、思考模型输出、上下文限制以及输入输出的实际计费规则。" },
+  { slug: "qwen", label: "Qwen API 中转站", terms: ["qwen", "通义", "千问", "阿里云"], intro: "覆盖通义千问文本、代码与多模态模型。选择时应区分不同尺寸、用途、协议和上下文限制。" },
+  { slug: "kimi", label: "Kimi API 中转站", terms: ["kimi", "moonshot", "月之暗面"], intro: "适合中文长文本和文件场景。需要确认 Kimi 与 Moonshot 模型映射、文件能力、工具调用和超长上下文计费。" }
 ];
 
 const FAQ = [
-  ["AI 中转站是什么？", "AI 中转站位于用户应用和模型厂商 API 之间，通常提供统一鉴权、人民币充值、多模型路由、余额结算和兼容接口。它降低了接入门槛，但也增加了一层第三方服务与数据处理链路。"],
-  ["AI 中转站怎么选？", "先确认需要的模型与协议，再用小额充值测试真实任务。重点比较高峰期成功率、首字延迟、上下文长度、工具调用、缓存、账单明细、退款规则和运营稳定性，不要只看一次测速或最低倍率。"],
+  ["API 中转站是什么？", "API 中转站位于用户应用和模型厂商 API 之间，通常提供统一鉴权、人民币充值、多模型路由、余额结算和兼容接口。它降低了接入门槛，但也增加了一层第三方服务与数据处理链路。"],
+  ["API 中转站怎么选？", "先确认需要的模型与协议，再用小额充值测试真实任务。重点比较高峰期成功率、首字延迟、上下文长度、工具调用、缓存、账单明细、退款规则和运营稳定性，不要只看一次测速或最低倍率。"],
   ["排名靠前就一定更好吗？", "不一定。榜单用于缩小候选范围，不代替具体场景验收。同档位站点的指标差异可能很小，编程、长文本、多模态和企业使用也会有不同优先级。"],
   ["低倍率等于官方价格打折吗？", "不一定。实际成本还取决于余额兑换比例、输入输出分别计费、缓存费用、分组倍率和套餐规则。比较价格时应以同一组请求的最终账单为准。"],
   ["使用中转站有哪些风险？", "常见风险包括上游变化、模型映射不透明、余额无法退回、日志留存、限流、账号池波动和服务停止。敏感数据与关键业务更适合官方 API 或可审计的合规服务。"],
@@ -190,7 +191,7 @@ function head({ title, description, canonical, type = "website", prev = "", next
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-  <meta name="author" content="AI 中转站推荐">
+  <meta name="author" content="${SITE_NAME}">
   <meta name="theme-color" content="#159a96">
   <link rel="canonical" href="${canonical}">
   <link rel="alternate" hreflang="zh-CN" href="${canonical}">
@@ -199,7 +200,7 @@ function head({ title, description, canonical, type = "website", prev = "", next
   ${next ? `<link rel="next" href="${next}">` : ""}
   <meta property="og:type" content="${type}">
   <meta property="og:locale" content="zh_CN">
-  <meta property="og:site_name" content="AI 中转站推荐">
+  <meta property="og:site_name" content="${SITE_NAME}">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:url" content="${canonical}">
@@ -220,14 +221,14 @@ function head({ title, description, canonical, type = "website", prev = "", next
 function header(active = "ranking") {
   return `<a class="skip-link" href="#main-content">跳转到主要内容</a>
 <header class="site-header"><div class="page-gutter header-inner">
-  <a class="brand" href="/" aria-label="AI 中转站推荐首页"><span class="brand-mark">${icon("bolt")}</span><span><strong>AI 中转站推荐</strong><small>API TRANSIT GUIDE</small></span></a>
+  <a class="brand" href="/" aria-label="${SITE_NAME}首页"><span class="brand-mark">${icon("bolt")}</span><span><strong>${SITE_NAME}</strong><small>API TRANSIT GUIDE</small></span></a>
   <nav class="main-nav" aria-label="主导航"><a href="/"${active === "ranking" ? ' aria-current="page"' : ""}>综合排名</a>${TOPICS.slice(0, 4).map((topic) => `<a href="/topics/${topic.slug}/"${active === topic.slug ? ' aria-current="page"' : ""}>${topic.label.replace(" 中转站", "")}</a>`).join("")}<a href="/#guide">选择指南</a></nav>
   <a class="header-cta" href="#ranking">查看榜单 ${icon("arrow")}</a>
 </div></header>`;
 }
 
 function footer(updatedDate) {
-  return `<footer class="site-footer"><div class="page-gutter footer-grid"><div><a class="brand footer-brand" href="/"><span class="brand-mark">${icon("bolt")}</span><span><strong>AI 中转站推荐</strong><small>排名、专题与选择指南</small></span></a><p>帮助开发者从公开信息中筛选 AI API 中转服务。排名与指标仅作信息参考，不构成购买或投资建议。</p></div><nav aria-label="页脚导航"><strong>模型专题</strong>${TOPICS.map((topic) => `<a href="/topics/${topic.slug}/">${topic.label}</a>`).join("")}</nav><nav aria-label="站点信息"><strong>站点信息</strong><a href="/#faq">常见问题</a><a href="/sitemap.xml">站点地图</a><span>数据日期 ${updatedDate}</span></nav></div><div class="page-gutter footer-bottom"><span>© ${new Date().getUTCFullYear()} AI 中转站推荐</span><span>每天更新 2 次</span></div></footer>`;
+  return `<footer class="site-footer"><div class="page-gutter footer-grid"><div><a class="brand footer-brand" href="/"><span class="brand-mark">${icon("bolt")}</span><span><strong>${SITE_NAME}</strong><small>排名、专题与选择指南</small></span></a><p>帮助用户从公开信息中筛选 API 中转服务。排名与指标仅作信息参考，不构成购买或投资建议。</p></div><nav aria-label="页脚导航"><strong>模型专题</strong>${TOPICS.map((topic) => `<a href="/topics/${topic.slug}/">${topic.label}</a>`).join("")}</nav><nav aria-label="站点信息"><strong>站点信息</strong><a href="/#faq">常见问题</a><a href="/sitemap.xml">站点地图</a><span>数据日期 ${updatedDate}</span></nav></div><div class="page-gutter footer-bottom"><span>© ${new Date().getUTCFullYear()} ${SITE_NAME}</span><span>每天更新 2 次</span></div></footer>`;
 }
 
 function renderCard(site) {
@@ -259,8 +260,8 @@ function siteStats(sites) {
 }
 
 function renderHero(stats, updatedDate) {
-  return `<section class="hero"><div class="hero-copy"><p class="eyebrow">2026 AI API TRANSIT DIRECTORY</p><h1>AI 中转站推荐</h1><p class="hero-lead">收录并整理 <strong>${stats.total}</strong> 家 AI API 中转站，帮助你比较 GPT、Claude、Codex、Gemini、DeepSeek 等中转服务的模型覆盖、稳定性和服务政策。</p><div class="hero-actions"><a class="button primary" href="#ranking">浏览中转站排名 ${icon("arrow")}</a><a class="button secondary" href="#guide">先看选择指南</a></div><p class="update-line">${icon("clock")} 数据日期 ${updatedDate} · 每日更新两次</p></div></section>
-  <section class="stats-strip" aria-label="站点数据概览"><div><strong>${stats.total}</strong><span>收录中转站</span></div><div><strong>${stats.models}</strong><span>模型与厂商标签</span></div><div><strong>${stats.highUptime}</strong><span>在线率 ≥ 99%</span></div><div><strong>${stats.described}</strong><span>含详细介绍</span></div></section>`;
+  return `<section class="hero"><div class="hero-copy"><p class="eyebrow">2026 API TRANSIT DIRECTORY</p><h1>${SITE_NAME}</h1><p class="hero-lead">收录并整理 <strong>${stats.total}</strong> 家 API 中转站，帮助你比较 GPT、Claude、Codex、Gemini、DeepSeek 等服务的模型覆盖、稳定性和服务政策。</p><div class="hero-actions"><a class="button primary" href="#ranking">浏览 API 中转站排名 ${icon("arrow")}</a><a class="button secondary" href="#guide">先看选择指南</a></div><p class="update-line">${icon("clock")} 数据日期 ${updatedDate} · 每日更新两次</p></div></section>
+  <section class="stats-strip" aria-label="站点数据概览"><div><strong>${stats.total}</strong><span>收录 API 中转站</span></div><div><strong>${stats.models}</strong><span>模型与厂商标签</span></div><div><strong>${stats.highUptime}</strong><span>在线率 ≥ 99%</span></div><div><strong>${stats.described}</strong><span>含详细介绍</span></div></section>`;
 }
 
 function renderTopics(sites) {
@@ -268,17 +269,17 @@ function renderTopics(sites) {
 }
 
 function renderGuide() {
-  return `<section class="section guide-section" id="guide" aria-labelledby="guide-title"><div class="guide-intro"><p>SELECTION GUIDE</p><h2 id="guide-title">选择 AI 中转站，先问这 6 个问题</h2><p>低价与短时测速只能说明一部分情况。真正影响长期体验的是模型来源、接口能力、账单透明度、稳定性和退出成本。</p></div><ol class="guide-list"><li><b>01</b><div><h3>需要哪些模型与协议？</h3><p>明确 GPT、Claude、Gemini、DeepSeek 等具体版本，以及原生协议还是 OpenAI 兼容协议。</p></div></li><li><b>02</b><div><h3>真实任务能否稳定完成？</h3><p>用代码、长文档、工具调用或多模态等真实任务测试，不要只发送一句“你好”。</p></div></li><li><b>03</b><div><h3>高峰期成功率如何？</h3><p>分别在白天和晚高峰连续测试，记录首字延迟、完整耗时、失败率和断流情况。</p></div></li><li><b>04</b><div><h3>计费是否能复算？</h3><p>核对余额兑换、输入输出、缓存、图片和分组倍率，确认一次请求为什么扣除对应金额。</p></div></li><li><b>05</b><div><h3>隐私和日志怎么处理？</h3><p>默认第三方可能接触请求与响应。敏感信息先脱敏，企业使用应核对日志、删除与责任条款。</p></div></li><li><b>06</b><div><h3>余额和服务如何退出？</h3><p>先小额充值，了解退款、发票、余额有效期和停止服务时的处理规则，并准备备用接口。</p></div></li></ol></section>`;
+  return `<section class="section guide-section" id="guide" aria-labelledby="guide-title"><div class="guide-intro"><p>SELECTION GUIDE</p><h2 id="guide-title">选择 API 中转站，先问这 6 个问题</h2><p>低价与短时测速只能说明一部分情况。真正影响长期体验的是模型来源、接口能力、账单透明度、稳定性和退出成本。</p></div><ol class="guide-list"><li><b>01</b><div><h3>需要哪些模型与协议？</h3><p>明确 GPT、Claude、Gemini、DeepSeek 等具体版本，以及原生协议还是 OpenAI 兼容协议。</p></div></li><li><b>02</b><div><h3>真实任务能否稳定完成？</h3><p>用代码、长文档、工具调用或多模态等真实任务测试，不要只发送一句“你好”。</p></div></li><li><b>03</b><div><h3>高峰期成功率如何？</h3><p>分别在白天和晚高峰连续测试，记录首字延迟、完整耗时、失败率和断流情况。</p></div></li><li><b>04</b><div><h3>计费是否能复算？</h3><p>核对余额兑换、输入输出、缓存、图片和分组倍率，确认一次请求为什么扣除对应金额。</p></div></li><li><b>05</b><div><h3>隐私和日志怎么处理？</h3><p>默认第三方可能接触请求与响应。敏感信息先脱敏，企业使用应核对日志、删除与责任条款。</p></div></li><li><b>06</b><div><h3>余额和服务如何退出？</h3><p>先小额充值，了解退款、发票、余额有效期和停止服务时的处理规则，并准备备用接口。</p></div></li></ol></section>`;
 }
 
 function renderFaq() {
-  return `<section class="section faq-section" id="faq" aria-labelledby="faq-title"><div class="section-heading"><p>COMMON QUESTIONS</p><h2 id="faq-title">AI 中转站常见问题</h2></div><div class="faq-list">${FAQ.map(([question, answer]) => `<details><summary>${escapeHtml(question)}<span>+</span></summary><p>${escapeHtml(answer)}</p></details>`).join("")}</div></section>`;
+  return `<section class="section faq-section" id="faq" aria-labelledby="faq-title"><div class="section-heading"><p>COMMON QUESTIONS</p><h2 id="faq-title">API 中转站常见问题</h2></div><div class="faq-list">${FAQ.map(([question, answer]) => `<details><summary>${escapeHtml(question)}<span>+</span></summary><p>${escapeHtml(answer)}</p></details>`).join("")}</div></section>`;
 }
 
 function baseGraph({ canonical, title, description, updatedDate, sites, page = 1, breadcrumb = [] }) {
   return [
-    { "@type": "Organization", "@id": `${ORIGIN}/#organization`, name: "AI 中转站推荐", url: `${ORIGIN}/`, logo: { "@type": "ImageObject", url: `${ORIGIN}/assets/favicon.svg` } },
-    { "@type": "WebSite", "@id": `${ORIGIN}/#website`, url: `${ORIGIN}/`, name: "AI 中转站推荐", inLanguage: "zh-CN", publisher: { "@id": `${ORIGIN}/#organization` } },
+    { "@type": "Organization", "@id": `${ORIGIN}/#organization`, name: SITE_NAME, url: `${ORIGIN}/`, logo: { "@type": "ImageObject", url: `${ORIGIN}/assets/favicon.svg` } },
+    { "@type": "WebSite", "@id": `${ORIGIN}/#website`, url: `${ORIGIN}/`, name: SITE_NAME, inLanguage: "zh-CN", publisher: { "@id": `${ORIGIN}/#organization` } },
     { "@type": "CollectionPage", "@id": `${canonical}#webpage`, url: canonical, name: title, description, inLanguage: "zh-CN", dateModified: updatedDate, isPartOf: { "@id": `${ORIGIN}/#website` }, breadcrumb: { "@id": `${canonical}#breadcrumb` } },
     { "@type": "BreadcrumbList", "@id": `${canonical}#breadcrumb`, itemListElement: breadcrumb.map((item, index) => ({ "@type": "ListItem", position: index + 1, name: item.name, item: item.url })) },
     { "@type": "ItemList", "@id": `${canonical}#ranking`, name: `${title}榜单`, numberOfItems: sites.length, itemListOrder: "https://schema.org/ItemListOrderAscending", itemListElement: sites.map((site) => ({ "@type": "ListItem", position: site.rank, item: { "@type": "Service", name: site.name, url: site.url, description: `${site.name}，推荐序 ${site.rank}，在线率 ${formatUptime(site.uptime)}，平均延迟 ${formatLatency(site.latencyMs)}，收录模型 ${site.modelCount} 个。` } })) },
@@ -290,21 +291,21 @@ function renderRankingPage({ page, totalPages, pageSites, allSites, updatedDate 
   const first = pageSites[0]?.rank || 0;
   const last = pageSites.at(-1)?.rank || 0;
   const canonical = pageUrl(page);
-  const title = page === 1 ? "AI 中转站推荐" : `AI 中转站推荐第 ${page} 页 - 排名 ${first} 至 ${last}`;
-  const description = page === 1 ? `AI 中转站推荐与 API 中转站排名，比较 ${allSites.length} 家站点的 GPT、Claude、Codex、Gemini、DeepSeek 等模型覆盖，以及在线率、延迟、评分、退款和发票信息。` : `AI 中转站推荐第 ${page} 页，展示推荐序 ${first} 至 ${last} 的 API 中转站，逐项比较模型数量、在线率、平均延迟、用户评分、退款与发票政策，并提供充值前的选择提醒。`;
-  const graph = baseGraph({ canonical, title, description, updatedDate, sites: pageSites, page, breadcrumb: page === 1 ? [{ name: "AI 中转站推荐", url: canonical }] : [{ name: "AI 中转站推荐", url: `${ORIGIN}/` }, { name: `第 ${page} 页`, url: canonical }] });
-  const pageOpening = page === 1 ? renderHero(siteStats(allSites), updatedDate) : `<nav class="breadcrumbs" aria-label="面包屑"><a href="/">AI 中转站推荐</a><span>/</span><span aria-current="page">第 ${page} 页</span></nav><section class="page-intro"><p>RANKING PAGE ${page}</p><h1>AI 中转站推荐第 ${page} 页</h1><span>推荐序 ${first}–${last}，数据日期 ${updatedDate}</span></section>`;
-  const ranking = `<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>AI API DIRECTORY</p><h2 id="ranking-title">${page === 1 ? "AI API 中转站排名" : `推荐序 ${first}–${last}`}</h2></div><div class="ranking-note"><i></i><span>当前为第 ${page}/${totalPages} 页</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>`;
+  const title = page === 1 ? SITE_NAME : `${SITE_NAME}第 ${page} 页 - 排名 ${first} 至 ${last}`;
+  const description = page === 1 ? `API 中转站介绍、推荐与排名，比较 ${allSites.length} 家站点的 GPT、Claude、Codex、Gemini、DeepSeek 等模型覆盖，以及在线率、延迟、评分、退款和发票信息。` : `${SITE_NAME}第 ${page} 页，展示推荐序 ${first} 至 ${last} 的 API 中转站，逐项比较模型数量、在线率、平均延迟、用户评分、退款与发票政策，并提供充值前的选择提醒。`;
+  const graph = baseGraph({ canonical, title, description, updatedDate, sites: pageSites, page, breadcrumb: page === 1 ? [{ name: SITE_NAME, url: canonical }] : [{ name: SITE_NAME, url: `${ORIGIN}/` }, { name: `第 ${page} 页`, url: canonical }] });
+  const pageOpening = page === 1 ? renderHero(siteStats(allSites), updatedDate) : `<nav class="breadcrumbs" aria-label="面包屑"><a href="/">${SITE_NAME}</a><span>/</span><span aria-current="page">第 ${page} 页</span></nav><section class="page-intro"><p>RANKING PAGE ${page}</p><h1>${SITE_NAME}第 ${page} 页</h1><span>推荐序 ${first}–${last}，数据日期 ${updatedDate}</span></section>`;
+  const ranking = `<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>API DIRECTORY</p><h2 id="ranking-title">${page === 1 ? "API 中转站排名" : `推荐序 ${first}–${last}`}</h2></div><div class="ranking-note"><i></i><span>当前为第 ${page}/${totalPages} 页</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>`;
   const pageClosing = page === 1 ? renderTopics(allSites) + renderGuide() + renderFaq() : "";
   return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, prev: page > 1 ? pageUrl(page - 1) : "", next: page < totalPages ? pageUrl(page + 1) : "", graph })}<body>${header("ranking")}<main id="main-content"><div class="page-gutter">${pageOpening}${ranking}${pageClosing}</div></main>${footer(updatedDate)}</body></html>`;
 }
 
 function renderTopicPage({ topic, matches, updatedDate }) {
   const canonical = `${ORIGIN}/topics/${topic.slug}/`;
-  const title = `${topic.label}推荐 - ${matches.length} 家相关 AI API 中转站`;
-  const description = `${topic.label}推荐与选择指南，比较 ${matches.length} 家相关 AI API 中转站的在线率、平均延迟、模型数量、用户评分、退款与发票政策，并说明协议核对、真实任务测试和小额充值方法。`;
-  const graph = baseGraph({ canonical, title, description, updatedDate, sites: matches, breadcrumb: [{ name: "AI 中转站推荐", url: `${ORIGIN}/` }, { name: topic.label, url: canonical }] });
-  return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, graph })}<body>${header(topic.slug)}<main id="main-content"><div class="page-gutter"><nav class="breadcrumbs" aria-label="面包屑"><a href="/">AI 中转站推荐</a><span>/</span><span aria-current="page">${topic.label}</span></nav><section class="topic-hero"><p>MODEL TRANSIT DIRECTORY</p><h1>${topic.label}推荐</h1><p>${escapeHtml(topic.intro)}</p><div><strong>${matches.length}</strong><span>家相关站点</span></div></section><section class="topic-advice"><h2>${topic.label}怎么选？</h2><p>先确认具体模型版本、接口协议和必需功能，再用同一组真实任务测试高峰期成功率、首字延迟、完整输出和账单。排名只用于建立候选集，充值前仍需独立核验。</p></section><section class="section ranking-section"><div class="ranking-head"><div><p>RELATED STATIONS</p><h2>${topic.label}相关站点</h2><span>以下站点因名称、简介或模型标签与该专题匹配。</span></div></div><div class="station-grid">${matches.map(renderCard).join("")}</div></section>${renderFaq()}</div></main>${footer(updatedDate)}</body></html>`;
+  const title = `${topic.label}推荐 - ${matches.length} 家相关 API 中转站`;
+  const description = `${topic.label}推荐与选择指南，比较 ${matches.length} 家相关 API 中转站的在线率、平均延迟、模型数量、用户评分、退款与发票政策，并说明协议核对、真实任务测试和小额充值方法。`;
+  const graph = baseGraph({ canonical, title, description, updatedDate, sites: matches, breadcrumb: [{ name: SITE_NAME, url: `${ORIGIN}/` }, { name: topic.label, url: canonical }] });
+  return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, graph })}<body>${header(topic.slug)}<main id="main-content"><div class="page-gutter"><nav class="breadcrumbs" aria-label="面包屑"><a href="/">${SITE_NAME}</a><span>/</span><span aria-current="page">${topic.label}</span></nav><section class="topic-hero"><p>MODEL API DIRECTORY</p><h1>${topic.label}推荐</h1><p>${escapeHtml(topic.intro)}</p><div><strong>${matches.length}</strong><span>家相关站点</span></div></section><section class="topic-advice"><h2>${topic.label}怎么选？</h2><p>先确认具体模型版本、接口协议和必需功能，再用同一组真实任务测试高峰期成功率、首字延迟、完整输出和账单。排名只用于建立候选集，充值前仍需独立核验。</p></section><section class="section ranking-section"><div class="ranking-head"><div><p>RELATED API STATIONS</p><h2>${topic.label}相关站点</h2><span>以下站点因名称、简介或模型标签与该专题匹配。</span></div></div><div class="station-grid">${matches.map(renderCard).join("")}</div></section>${renderFaq()}</div></main>${footer(updatedDate)}</body></html>`;
 }
 
 function minifyCss(css) {

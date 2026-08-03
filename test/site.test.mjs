@@ -23,9 +23,9 @@ function jsonLd(html) {
 
 test("homepage title and primary heading are exact", async () => {
   const html = await htmlFor(1);
-  assert.ok(html.includes("<title>AI 中转站推荐</title>"));
+  assert.ok(html.includes("<title>API中转站介绍和推荐</title>"));
   assert.equal((html.match(/<h1(?:\s|>)/g) || []).length, 1);
-  assert.ok(html.includes("<h1>AI 中转站推荐</h1>"));
+  assert.ok(html.includes("<h1>API中转站介绍和推荐</h1>"));
 });
 
 test("static ranking displays no more than 360 unique sites", async () => {

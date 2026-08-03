@@ -1,7 +1,7 @@
 {
-  "name": "AI 中转站推荐",
-  "short_name": "中转站推荐",
-  "description": "AI API 中转站静态排名与选择指南",
+  "name": "API中转站介绍和推荐",
+  "short_name": "API 中转站",
+  "description": "API 中转站介绍、推荐、排名与选择指南",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f1f4f5",
