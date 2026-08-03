@@ -1,0 +1,10 @@
+{
+  "name": "AI 中转站推荐",
+  "short_name": "中转站推荐",
+  "description": "AI API 中转站静态排名与选择指南",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f1f4f5",
+  "theme_color": "#158f8b",
+  "icons": [{ "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
