@@ -56,13 +56,13 @@ test("ranking is shuffled while staying within ten-site source tiers", async () 
   assert.notDeepEqual(sourceRanks, Array.from({ length: totalSites }, (_, index) => index + 1));
 });
 
-test("homepage ranking appears before explanatory sections", async () => {
+test("homepage ranking appears before user-facing sections", async () => {
   const html = await htmlFor(1);
   const ranking = html.indexOf('id="ranking"');
   const topics = html.indexOf('class="section topics-section"');
-  const method = html.indexOf('id="method"');
   const guide = html.indexOf('id="guide"');
-  assert.ok(ranking > 0 && ranking < topics && topics < method && method < guide);
+  assert.ok(ranking > 0 && ranking < topics && topics < guide);
+  assert.doesNotMatch(html, /纯静态 HTML|无需脚本|同档轻量轮换|GitHub Pages|GitHub Actions/);
 });
 
 test("visible station descriptions are rewritten instead of copied from data", async () => {

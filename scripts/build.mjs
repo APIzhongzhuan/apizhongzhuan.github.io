@@ -28,11 +28,10 @@ const FAQ = [
   ["AI 中转站是什么？", "AI 中转站位于用户应用和模型厂商 API 之间，通常提供统一鉴权、人民币充值、多模型路由、余额结算和兼容接口。它降低了接入门槛，但也增加了一层第三方服务与数据处理链路。"],
   ["AI 中转站怎么选？", "先确认需要的模型与协议，再用小额充值测试真实任务。重点比较高峰期成功率、首字延迟、上下文长度、工具调用、缓存、账单明细、退款规则和运营稳定性，不要只看一次测速或最低倍率。"],
   ["排名靠前就一定更好吗？", "不一定。榜单用于缩小候选范围，不代替具体场景验收。同档位站点的指标差异可能很小，编程、长文本、多模态和企业使用也会有不同优先级。"],
-  ["为什么榜单顺序会发生变化？", "站点先按公开目录的综合序筛选，再在每十个相邻站点组成的同档位内按数据日期稳定打乱。这样既保留总体质量层级，也让展示顺序与原始数据产生明显区别，避免把细小差异误解成永久且绝对的名次。"],
   ["低倍率等于官方价格打折吗？", "不一定。实际成本还取决于余额兑换比例、输入输出分别计费、缓存费用、分组倍率和套餐规则。比较价格时应以同一组请求的最终账单为准。"],
   ["使用中转站有哪些风险？", "常见风险包括上游变化、模型映射不透明、余额无法退回、日志留存、限流、账号池波动和服务停止。敏感数据与关键业务更适合官方 API 或可审计的合规服务。"],
   ["如何判断模型是否被替换？", "不要只依赖模型自报身份。应准备固定测试集，长期比较上下文、工具调用、结构化输出、视觉能力、响应特征与账单，并在异常时保留请求 ID 复测。"],
-  ["数据多久更新一次？", "站点通过 GitHub Actions 每天自动同步两次。页面显示数据日期，若上游临时不可用则保留上一份已验证快照，避免生成空榜单或损坏页面。"]
+  ["数据多久更新一次？", "榜单通常每天更新两次，页面会显示当前数据日期。在线率、延迟、价格和站点政策都可能变化，使用前请再次核对。"]
 ];
 
 function escapeHtml(value) {
@@ -228,7 +227,7 @@ function header(active = "ranking") {
 }
 
 function footer(updatedDate) {
-  return `<footer class="site-footer"><div class="page-gutter footer-grid"><div><a class="brand footer-brand" href="/"><span class="brand-mark">${icon("bolt")}</span><span><strong>AI 中转站推荐</strong><small>静态排名与选择指南</small></span></a><p>帮助开发者从公开信息中筛选 AI API 中转服务。排名与指标仅作信息参考，不构成购买或投资建议。</p></div><nav aria-label="页脚导航"><strong>模型专题</strong>${TOPICS.map((topic) => `<a href="/topics/${topic.slug}/">${topic.label}</a>`).join("")}</nav><nav aria-label="站点信息"><strong>站点信息</strong><a href="/#method">排名说明</a><a href="/#faq">常见问题</a><a href="/sitemap.xml">站点地图</a><span>数据日期 ${updatedDate}</span></nav></div><div class="page-gutter footer-bottom"><span>© ${new Date().getUTCFullYear()} AI 中转站推荐</span><span>每天自动更新 2 次 · GitHub Pages</span></div></footer>`;
+  return `<footer class="site-footer"><div class="page-gutter footer-grid"><div><a class="brand footer-brand" href="/"><span class="brand-mark">${icon("bolt")}</span><span><strong>AI 中转站推荐</strong><small>排名、专题与选择指南</small></span></a><p>帮助开发者从公开信息中筛选 AI API 中转服务。排名与指标仅作信息参考，不构成购买或投资建议。</p></div><nav aria-label="页脚导航"><strong>模型专题</strong>${TOPICS.map((topic) => `<a href="/topics/${topic.slug}/">${topic.label}</a>`).join("")}</nav><nav aria-label="站点信息"><strong>站点信息</strong><a href="/#faq">常见问题</a><a href="/sitemap.xml">站点地图</a><span>数据日期 ${updatedDate}</span></nav></div><div class="page-gutter footer-bottom"><span>© ${new Date().getUTCFullYear()} AI 中转站推荐</span><span>每天更新 2 次</span></div></footer>`;
 }
 
 function renderCard(site) {
@@ -260,16 +259,12 @@ function siteStats(sites) {
 }
 
 function renderHero(stats, updatedDate) {
-  return `<section class="hero"><div class="hero-copy"><p class="eyebrow">2026 AI API TRANSIT DIRECTORY</p><h1>AI 中转站推荐</h1><p class="hero-lead">收录并整理 <strong>${stats.total}</strong> 家 AI API 中转站，通过静态 HTML 排名、模型专题和选择指南，帮助你比较 GPT、Claude、Codex、Gemini、DeepSeek 等中转服务。</p><div class="hero-actions"><a class="button primary" href="#ranking">浏览中转站排名 ${icon("arrow")}</a><a class="button secondary" href="#guide">先看选择指南</a></div><p class="update-line">${icon("clock")} 数据日期 ${updatedDate} · 每日自动更新两次</p></div><div class="hero-panel" aria-label="榜单摘要"><div class="panel-bar"><i></i><i></i><i></i><span>apizhongzhuan.github.io/ranking</span></div><ol><li><b>01</b><span><strong>公开信息聚合</strong><small>最多展示 360 家，拒绝无限堆叠</small></span><em>DATA</em></li><li><b>02</b><span><strong>同档轻量轮换</strong><small>保留层级，减少绝对名次误导</small></span><em>FAIR</em></li><li><b>03</b><span><strong>纯静态 HTML</strong><small>无需脚本即可读取完整榜单</small></span><em>SEO</em></li><li><b>04</b><span><strong>模型专题页</strong><small>按真实使用场景缩小候选范围</small></span><em>GUIDE</em></li></ol></div></section>
+  return `<section class="hero"><div class="hero-copy"><p class="eyebrow">2026 AI API TRANSIT DIRECTORY</p><h1>AI 中转站推荐</h1><p class="hero-lead">收录并整理 <strong>${stats.total}</strong> 家 AI API 中转站，帮助你比较 GPT、Claude、Codex、Gemini、DeepSeek 等中转服务的模型覆盖、稳定性和服务政策。</p><div class="hero-actions"><a class="button primary" href="#ranking">浏览中转站排名 ${icon("arrow")}</a><a class="button secondary" href="#guide">先看选择指南</a></div><p class="update-line">${icon("clock")} 数据日期 ${updatedDate} · 每日更新两次</p></div></section>
   <section class="stats-strip" aria-label="站点数据概览"><div><strong>${stats.total}</strong><span>收录中转站</span></div><div><strong>${stats.models}</strong><span>模型与厂商标签</span></div><div><strong>${stats.highUptime}</strong><span>在线率 ≥ 99%</span></div><div><strong>${stats.described}</strong><span>含详细介绍</span></div></section>`;
 }
 
 function renderTopics(sites) {
   return `<section class="section topics-section" aria-labelledby="topics-title"><div class="section-heading"><p>MODEL DIRECTORY</p><h2 id="topics-title">按模型选择中转站</h2><span>先确定协议与模型，再比较价格、稳定性和服务政策。</span></div><div class="topic-grid">${TOPICS.map((topic, index) => { const count = sites.filter((site) => topicMatches(site, topic)).length; return `<a class="topic-card" href="/topics/${topic.slug}/"><span class="topic-index">0${index + 1}</span><div><h3>${topic.label}</h3><p>${escapeHtml(topic.intro)}</p><strong>${count} 家相关站点 ${icon("arrow")}</strong></div></a>`; }).join("")}</div></section>`;
-}
-
-function renderMethod() {
-  return `<section class="section method-section" id="method" aria-labelledby="method-title"><div class="section-heading"><p>METHODOLOGY</p><h2 id="method-title">排名与更新说明</h2><span>排名用于建立候选集，不把有限公开指标包装成绝对评测。</span></div><div class="method-grid"><article><span>${icon("chart")}</span><h3>数据筛选</h3><p>同步公开目录后按原始综合序取前 360 条，验证名称、链接和基础字段。页面不会展示超过 360 家站点。</p></article><article><span>${icon("shield")}</span><h3>同档打乱</h3><p>每十个相邻站点视为同一档位，并在档位内部按数据日期稳定洗牌。原始大层级不变，但展示顺序不会与 data.json 完全相同。</p></article><article><span>${icon("clock")}</span><h3>定时更新</h3><p>GitHub Actions 每天运行两次。同步失败时继续使用上一份已验证快照，避免空页面和损坏数据被部署。</p></article></div></section>`;
 }
 
 function renderGuide() {
@@ -296,18 +291,18 @@ function renderRankingPage({ page, totalPages, pageSites, allSites, updatedDate 
   const last = pageSites.at(-1)?.rank || 0;
   const canonical = pageUrl(page);
   const title = page === 1 ? "AI 中转站推荐" : `AI 中转站推荐第 ${page} 页 - 排名 ${first} 至 ${last}`;
-  const description = page === 1 ? `AI 中转站推荐与 API 中转站排名，静态展示最多 ${allSites.length} 家站点，覆盖 GPT、Claude、Codex、Gemini、DeepSeek 等模型，包含在线率、延迟、评分、退款和发票信息。` : `AI 中转站推荐第 ${page} 页，展示推荐序 ${first} 至 ${last} 的 API 中转站，逐项比较模型数量、在线率、平均延迟、用户评分、退款与发票政策，并提供静态 HTML 资料入口和选择提醒。`;
+  const description = page === 1 ? `AI 中转站推荐与 API 中转站排名，比较 ${allSites.length} 家站点的 GPT、Claude、Codex、Gemini、DeepSeek 等模型覆盖，以及在线率、延迟、评分、退款和发票信息。` : `AI 中转站推荐第 ${page} 页，展示推荐序 ${first} 至 ${last} 的 API 中转站，逐项比较模型数量、在线率、平均延迟、用户评分、退款与发票政策，并提供充值前的选择提醒。`;
   const graph = baseGraph({ canonical, title, description, updatedDate, sites: pageSites, page, breadcrumb: page === 1 ? [{ name: "AI 中转站推荐", url: canonical }] : [{ name: "AI 中转站推荐", url: `${ORIGIN}/` }, { name: `第 ${page} 页`, url: canonical }] });
   const pageOpening = page === 1 ? renderHero(siteStats(allSites), updatedDate) : `<nav class="breadcrumbs" aria-label="面包屑"><a href="/">AI 中转站推荐</a><span>/</span><span aria-current="page">第 ${page} 页</span></nav><section class="page-intro"><p>RANKING PAGE ${page}</p><h1>AI 中转站推荐第 ${page} 页</h1><span>推荐序 ${first}–${last}，数据日期 ${updatedDate}</span></section>`;
-  const ranking = `<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>STATIC HTML RANKING</p><h2 id="ranking-title">${page === 1 ? "AI API 中转站排名" : `推荐序 ${first}–${last}`}</h2><span>每页 ${PAGE_SIZE} 家，全部内容直接写入 HTML，搜索引擎和无脚本环境均可完整读取。</span></div><div class="ranking-note"><i></i><span>当前为第 ${page}/${totalPages} 页</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>`;
-  const pageClosing = page === 1 ? renderTopics(allSites) + renderMethod() + renderGuide() + renderFaq() : "";
+  const ranking = `<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>AI API DIRECTORY</p><h2 id="ranking-title">${page === 1 ? "AI API 中转站排名" : `推荐序 ${first}–${last}`}</h2></div><div class="ranking-note"><i></i><span>当前为第 ${page}/${totalPages} 页</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>`;
+  const pageClosing = page === 1 ? renderTopics(allSites) + renderGuide() + renderFaq() : "";
   return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, prev: page > 1 ? pageUrl(page - 1) : "", next: page < totalPages ? pageUrl(page + 1) : "", graph })}<body>${header("ranking")}<main id="main-content"><div class="page-gutter">${pageOpening}${ranking}${pageClosing}</div></main>${footer(updatedDate)}</body></html>`;
 }
 
 function renderTopicPage({ topic, matches, updatedDate }) {
   const canonical = `${ORIGIN}/topics/${topic.slug}/`;
   const title = `${topic.label}推荐 - ${matches.length} 家相关 AI API 中转站`;
-  const description = `${topic.label}推荐与选择指南，静态整理 ${matches.length} 家相关 AI API 中转站，比较在线率、平均延迟、模型数量、用户评分、退款与发票政策，并说明协议核对、真实任务测试和小额充值方法。`;
+  const description = `${topic.label}推荐与选择指南，比较 ${matches.length} 家相关 AI API 中转站的在线率、平均延迟、模型数量、用户评分、退款与发票政策，并说明协议核对、真实任务测试和小额充值方法。`;
   const graph = baseGraph({ canonical, title, description, updatedDate, sites: matches, breadcrumb: [{ name: "AI 中转站推荐", url: `${ORIGIN}/` }, { name: topic.label, url: canonical }] });
   return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, graph })}<body>${header(topic.slug)}<main id="main-content"><div class="page-gutter"><nav class="breadcrumbs" aria-label="面包屑"><a href="/">AI 中转站推荐</a><span>/</span><span aria-current="page">${topic.label}</span></nav><section class="topic-hero"><p>MODEL TRANSIT DIRECTORY</p><h1>${topic.label}推荐</h1><p>${escapeHtml(topic.intro)}</p><div><strong>${matches.length}</strong><span>家相关站点</span></div></section><section class="topic-advice"><h2>${topic.label}怎么选？</h2><p>先确认具体模型版本、接口协议和必需功能，再用同一组真实任务测试高峰期成功率、首字延迟、完整输出和账单。排名只用于建立候选集，充值前仍需独立核验。</p></section><section class="section ranking-section"><div class="ranking-head"><div><p>RELATED STATIONS</p><h2>${topic.label}相关站点</h2><span>以下站点因名称、简介或模型标签与该专题匹配。</span></div></div><div class="station-grid">${matches.map(renderCard).join("")}</div></section>${renderFaq()}</div></main>${footer(updatedDate)}</body></html>`;
 }

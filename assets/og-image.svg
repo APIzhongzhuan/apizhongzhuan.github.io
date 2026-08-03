@@ -6,7 +6,7 @@
   <text x="187" y="126" fill="#20252b" font-family="Arial, PingFang SC, sans-serif" font-size="32" font-weight="700">AI 中转站推荐</text>
   <text x="187" y="158" fill="#667078" font-family="monospace" font-size="15" letter-spacing="3">API TRANSIT GUIDE</text>
   <text x="92" y="304" fill="#20252b" font-family="Arial, PingFang SC, sans-serif" font-size="86" font-weight="800" letter-spacing="-5">AI 中转站推荐</text>
-  <text x="96" y="366" fill="#667078" font-family="Arial, PingFang SC, sans-serif" font-size="28">最多 360 家 · 纯静态 HTML · 每日更新两次</text>
+  <text x="96" y="366" fill="#667078" font-family="Arial, PingFang SC, sans-serif" font-size="28">覆盖主流模型 · 对比运行指标 · 每日更新两次</text>
   <g transform="translate(92 435)">
     <rect width="212" height="64" fill="#158f8b"/><text x="28" y="41" fill="#fff" font-family="Arial, PingFang SC, sans-serif" font-size="22" font-weight="700">综合排名</text>
     <rect x="226" width="212" height="64" fill="#e9eef0"/><text x="254" y="41" fill="#20252b" font-family="Arial, PingFang SC, sans-serif" font-size="22" font-weight="700">模型专题</text>
