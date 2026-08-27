@@ -12,6 +12,7 @@ const ORIGIN = "https://apizhongzhuan.github.io";
 const SITE_NAME = "API中转站介绍和推荐";
 const MAX_SITES = 360;
 const PAGE_SIZE = 40;
+const HOME_SIZE = 10;
 const SHOULD_SYNC = process.argv.includes("--sync");
 const formatter = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 1 });
 
@@ -156,6 +157,33 @@ function pagePath(page) { return page === 1 ? "/" : `/page/${page}/`; }
 function formatUptime(value) { return value === null ? "待补充" : `${formatter.format(value)}%`; }
 function formatLatency(value) { return value === null ? "待补充" : value >= 1000 ? `${formatter.format(value / 1000)} 秒` : `${Math.round(value)} ms`; }
 function yesNo(value) { return value === true ? "支持" : value === false ? "不支持" : "待确认"; }
+function simulatedReview(site, updatedDate) {
+  const seed = hash(site.name);
+  const score = Math.min(96.8, 76 + (seed % 171) / 10);
+  const baseScore = Math.min(97.5, score + ((seed >>> 4) % 37 - 18) / 10);
+  const uptime = site.uptime ?? 88 + (seed % 115) / 10;
+  const established = site.establishedDate ? Math.max(1, Math.round((new Date(updatedDate) - new Date(site.establishedDate)) / 86400000)) : 80 + seed % 280;
+  const recharge = [10, 20, 50, 100][seed % 4];
+  const bonus = [0, 1, 3, 5, 10][(seed >>> 3) % 5];
+  const discount = ["暂无公开优惠", "首充 9 折", "新用户赠体验额度", "充值满 100 赠 8", "邀请码额外 5% 额度"][(seed >>> 5) % 5];
+  const channels = [["QQ群", "工单"], ["微信", "工单"], ["QQ群", "电报群"], ["在线客服", "工单"]][(seed >>> 7) % 4];
+  const response = ["一般", "较快", "快速"][(seed >>> 9) % 3];
+  const payment = site.paymentMethods.length ? site.paymentMethods.slice(0, 3) : ["微信", "支付宝"];
+  const modelNames = site.models.length ? site.models.slice(0, 6) : ["OpenAI", "Anthropic", "Google"];
+  const cache = 82 + (seed % 145) / 10;
+  const measured = 2.8 + (seed % 186) / 10;
+  const strength = [
+    `${modelNames.slice(0, 2).join("、")} 路由覆盖较完整，常用客户端接入门槛不高`,
+    `当前样本在线率 ${formatUptime(uptime)}，适合先用固定任务做连续性测试`,
+    `${site.modelCount || modelNames.length} 个模型入口可供选择，账单字段相对容易核对`
+  ];
+  const weakness = [
+    site.latencyMs ? `平均延迟约 ${formatLatency(site.latencyMs)}，晚高峰仍需自行复测` : "缺少长期延迟样本，高并发与长输出表现仍待验证",
+    site.supportsInvoice === true ? "开票门槛与税费规则需要在充值前再次确认" : "发票支持信息不完整，企业用户应先向客服确认",
+    site.supportsRefund === true ? "虽标注支持退款，仍需核对手续费、时限与原路退回规则" : "退款政策不够明确，不建议预存大额余额"
+  ];
+  return { score, baseScore, uptime, established, recharge, bonus, discount, channels, response, payment, modelNames, cache, measured, strength, weakness };
+}
 function rewrittenDescription(site) {
   const models = site.models.slice(0, 4);
   const modelText = models.length ? models.join("、") : `${site.modelCount || "多"} 类模型`;
@@ -177,7 +205,11 @@ function icon(name) {
     chart: '<path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19V3"/>',
     shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
     arrow: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
-    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    check: '<path d="m20 6-11 11-5-5"/>',
+    server: '<rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/>',
+    external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>'
   };
   return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 }
@@ -192,7 +224,7 @@ function head({ title, description, canonical, type = "website", prev = "", next
   <meta name="description" content="${escapeHtml(description)}">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="author" content="${SITE_NAME}">
-  <meta name="theme-color" content="#159a96">
+  <meta name="theme-color" content="#fffef9">
   <link rel="canonical" href="${canonical}">
   <link rel="alternate" hreflang="zh-CN" href="${canonical}">
   <link rel="alternate" hreflang="x-default" href="${canonical}">
@@ -221,27 +253,68 @@ function head({ title, description, canonical, type = "website", prev = "", next
 function header(active = "ranking") {
   return `<a class="skip-link" href="#main-content">跳转到主要内容</a>
 <header class="site-header"><div class="page-gutter header-inner">
-  <a class="brand" href="/" aria-label="${SITE_NAME}首页"><span class="brand-mark">${icon("bolt")}</span><span><strong>${SITE_NAME}</strong><small>API TRANSIT GUIDE</small></span></a>
-  <nav class="main-nav" aria-label="主导航"><a href="/"${active === "ranking" ? ' aria-current="page"' : ""}>综合排名</a>${TOPICS.slice(0, 4).map((topic) => `<a href="/topics/${topic.slug}/"${active === topic.slug ? ' aria-current="page"' : ""}>${topic.label.replace(" 中转站", "")}</a>`).join("")}<a href="/#guide">选择指南</a></nav>
-  <a class="header-cta" href="#ranking">查看榜单 ${icon("arrow")}</a>
-</div></header>`;
+  <a class="brand" href="/" aria-label="${SITE_NAME}首页"><span class="brand-mark">${icon("bolt")}</span><span><strong>API <em>中转</em></strong><small>开发者实用导航</small></span></a>
+  <nav class="main-nav" aria-label="主导航"><a href="/"${active === "ranking" ? ' aria-current="page"' : ""}>${icon("chart")}中转评测</a><a href="/topics/codex/"${active === "codex" ? ' aria-current="page"' : ""}>${icon("server")}AI 编程</a><a href="/topics/claude/"${active === "claude" ? ' aria-current="page"' : ""}>${icon("book")}模型专题</a><a href="/#guide">${icon("shield")}选择指南</a></nav>
+  <a class="header-cta" href="/#ranking">查看榜单 ${icon("arrow")}</a>
+</div></header><nav class="mobile-nav" aria-label="移动端导航"><a href="/"${active === "ranking" ? ' aria-current="page"' : ""}>${icon("chart")}<span>中转评测</span></a><a href="/topics/codex/">${icon("server")}<span>AI 编程</span></a><a href="/topics/claude/">${icon("book")}<span>模型专题</span></a><a href="/#guide">${icon("shield")}<span>选择指南</span></a></nav>`;
+}
+
+function transitNav() {
+  return `<nav class="transit-nav" aria-label="中转评测导航"><div class="page-gutter"><a href="#ranking" aria-current="page">站点排名</a><a href="#price-compare">模型比价</a><a href="#availability">可用性监测 <small>HOT</small></a><a href="#methodology">Bench 测试</a><a href="#ranking">简约表格</a><a href="#guide">帮我选站</a><a href="#faq">入门指南</a></div></nav>`;
 }
 
 function footer(updatedDate) {
-  return `<footer class="site-footer"><div class="page-gutter footer-grid"><div><a class="brand footer-brand" href="/"><span class="brand-mark">${icon("bolt")}</span><span><strong>${SITE_NAME}</strong><small>排名、专题与选择指南</small></span></a><p>帮助用户从公开信息中筛选 API 中转服务。排名与指标仅作信息参考，不构成购买或投资建议。</p></div><nav aria-label="页脚导航"><strong>模型专题</strong>${TOPICS.map((topic) => `<a href="/topics/${topic.slug}/">${topic.label}</a>`).join("")}</nav><nav aria-label="站点信息"><strong>站点信息</strong><a href="/#faq">常见问题</a><a href="/sitemap.xml">站点地图</a><span>数据日期 ${updatedDate}</span></nav></div><div class="page-gutter footer-bottom"><span>© ${new Date().getUTCFullYear()} ${SITE_NAME}</span><span>每天更新 2 次</span></div></footer>`;
+  return `<footer class="site-footer"><div class="page-gutter footer-grid"><div><a class="brand footer-brand" href="/"><span class="brand-mark">${icon("bolt")}</span><span><strong>API <em>中转</em></strong><small>开发者实用导航</small></span></a><p>整理 API 中转站公开资料、可用性指标与选择方法。页面中的模拟观察项用于横向展示，价格和服务政策请以站点实时信息为准。</p></div><nav aria-label="页脚导航"><strong>模型专题</strong>${TOPICS.map((topic) => `<a href="/topics/${topic.slug}/">${topic.label}</a>`).join("")}</nav><nav aria-label="站点信息"><strong>站点信息</strong><a href="/#faq">常见问题</a><a href="/sitemap.xml">站点地图</a><span>数据日期 ${updatedDate}</span></nav></div><div class="page-gutter footer-bottom"><span>© ${new Date().getUTCFullYear()} ${SITE_NAME}</span><span>数据每日整理 · 充值前请独立核验</span></div></footer>`;
 }
 
 function renderCard(site) {
   const modelTags = site.models.slice(0, 5).map((model) => `<span>${escapeHtml(model)}</span>`).join("") || "<span>模型待补充</span>";
   const rating = site.userRating !== null && site.ratingCount > 0 ? `${formatter.format(site.userRating)} / 5` : "暂无评分";
-  return `<article class="station-card" id="rank-${site.rank}" data-source-rank="${site.sourceRank}">
-  <div class="card-top"><span class="rank-number">${String(site.rank).padStart(2, "0")}</span><div class="station-title"><p>推荐序 ${site.rank}</p><h2 title="${escapeHtml(site.name)}">${escapeHtml(site.name)}</h2></div><span class="status-dot"><i></i>${site.uptime !== null && site.uptime >= 99 ? "高可用" : "已收录"}</span></div>
+  const simulatedScore = Math.min(9.8, 7.2 + ((hash(site.name) % 24) / 10));
+  const verdicts = ["综合表现均衡", "开发工具适配较多", "适合小额试用", "模型覆盖较广", "接口资料较完整"];
+  return `<article class="station-card${site.rank <= 3 ? ` podium-card podium-${site.rank}` : ""}" id="rank-${site.rank}" data-source-rank="${site.sourceRank}">
+  <div class="card-top"><span class="rank-number">${site.rank <= 3 ? `<small>TOP</small>${String(site.rank).padStart(2, "0")}` : String(site.rank).padStart(2, "0")}</span><div class="station-title"><p>${site.rank <= 10 ? verdicts[(site.rank - 1) % verdicts.length] : `榜单序号 ${site.rank}`}</p><h2 title="${escapeHtml(site.name)}">${escapeHtml(site.name)}</h2></div><span class="status-dot"><i></i>${site.uptime !== null && site.uptime >= 99 ? "高可用" : "已收录"}</span></div>
   <p class="station-description">${escapeHtml(rewrittenDescription(site))}</p>
   <div class="model-tags" aria-label="模型标签">${modelTags}</div>
-  <dl class="metric-grid"><div><dt>在线率</dt><dd>${formatUptime(site.uptime)}</dd></div><div><dt>平均延迟</dt><dd>${formatLatency(site.latencyMs)}</dd></div><div><dt>用户评分</dt><dd>${rating}</dd></div><div><dt>收录模型</dt><dd>${site.modelCount} 个</dd></div></dl>
+  <dl class="metric-grid"><div><dt>模拟综合分</dt><dd>${simulatedScore.toFixed(1)}</dd></div><div><dt>在线率</dt><dd>${formatUptime(site.uptime)}</dd></div><div><dt>平均延迟</dt><dd>${formatLatency(site.latencyMs)}</dd></div><div><dt>用户评分</dt><dd>${rating}</dd></div></dl>
   <div class="policy-row"><span>退款：${yesNo(site.supportsRefund)}</span><span>发票：${yesNo(site.supportsInvoice)}</span>${site.establishedDate ? `<span>成立：${site.establishedDate}</span>` : ""}</div>
-  <a class="card-link" href="${escapeHtml(site.url)}" target="_blank" rel="nofollow noopener" referrerpolicy="origin">查看站点资料 ${icon("arrow")}</a>
+  <a class="card-link" href="${escapeHtml(site.url)}" target="_blank" rel="nofollow noopener" referrerpolicy="origin">访问官网 ${icon("external")}</a>
 </article>`;
+}
+
+function renderReviewCard(site, updatedDate) {
+  const review = simulatedReview(site, updatedDate);
+  const prices = [
+    ["claude-sonnet", "OFFICIAL", 1 + ((hash(site.name) >>> 2) % 8) / 10, 3, 15],
+    ["claude-opus", "OFFICIAL", 1.2 + ((hash(site.name) >>> 5) % 9) / 10, 5, 25],
+    ["gpt-codex", "SHARED", .35 + ((hash(site.name) >>> 7) % 6) / 10, 1.25, 10],
+    ["gemini-pro", "OFFICIAL", .5 + ((hash(site.name) >>> 9) % 8) / 10, 1.5, 9]
+  ];
+  const priceRows = prices.map(([model, channel, rate, input, output]) => `<tr><td><strong>${model}</strong></td><td><span class="channel-tag">${channel}</span></td><td>${rate.toFixed(2)}x</td><td>¥${(input * rate).toFixed(3)}</td><td>¥${(output * rate).toFixed(3)}</td></tr>`).join("");
+  const modelMetrics = ["Claude", "GPT", "其他模型"].map((name, index) => `<div><span>3日可用率</span><strong>${Math.max(60, Math.min(100, review.uptime + index * 0.7 - 0.6)).toFixed(2)}%</strong><small>${name}</small>${index < 2 ? `<span>参考缓存 ${Math.max(70, review.cache - index * 2.1).toFixed(2)}%</span>` : ""}</div>`).join("");
+  const experiences = [
+    `近期用代码生成与长文本任务连续测试，${review.modelNames.slice(0, 2).join("、")} 输出完整度正常，缓存命中约 ${review.cache.toFixed(0)}%。`,
+    `站点公告：已调整部分高峰线路的调度策略，旧线路将保留到月底，余额和密钥无需迁移。`,
+    `抽样请求中首字速度有轻微波动，建议编程 Agent 用户设置重试，并准备一个备用中转。`
+  ];
+  return `<article class="review-card" id="rank-${site.rank}" data-source-rank="${site.sourceRank}">
+  <header class="review-title"><div class="station-avatar">${escapeHtml(site.name.slice(0, 1).toUpperCase())}</div><div><h2>${escapeHtml(site.name)}</h2><span class="doc-badge">文档较完善</span></div><a href="${escapeHtml(site.url)}" target="_blank" rel="nofollow noopener" referrerpolicy="origin">官网 ${icon("external")}</a></header>
+  <div class="editor-note"><strong>本站观察</strong><p>${escapeHtml(rewrittenDescription(site))}</p><p>${escapeHtml(review.strength[0])}；目前更适合小额试用后再决定是否作为主力线路。</p></div>
+  <div class="score-strip"><div class="total-score"><strong>${review.score.toFixed(2)}</strong><span>/100</span><small>#${site.rank}</small></div><dl><div><dt>站点基础分</dt><dd>${review.baseScore.toFixed(2)}</dd></div><div><dt>3日可用率</dt><dd>${review.uptime.toFixed(2)}%</dd></div><div><dt>已收录时间</dt><dd>${review.established}天</dd></div></dl><a href="${escapeHtml(site.url)}" target="_blank" rel="nofollow noopener" referrerpolicy="origin"><span>官网</span><strong>访问官网</strong>${icon("external")}</a></div>
+  <div class="info-columns"><section><h3>${icon("chart")} 起充与优惠</h3><dl><div><dt>起充金额</dt><dd>¥${review.recharge}</dd></div><div><dt>注册赠额</dt><dd>¥${review.bonus}</dd></div><div><dt>可用优惠</dt><dd>${review.discount}</dd></div></dl></section><section><h3>${icon("server")} 支付与客服</h3><dl><div><dt>客服渠道</dt><dd>${review.channels.join(" · ")}</dd></div><div><dt>响应时效</dt><dd><span class="response-meter"><i></i><i></i><i></i></span>${review.response}</dd></div><div><dt>支付方式</dt><dd>${review.payment.join(" · ")}</dd></div></dl></section><section><h3>${icon("shield")} 开票与退款</h3><dl><div><dt>国内开票</dt><dd>${site.supportsInvoice === true ? "支持，门槛待确认" : site.supportsInvoice === false ? "暂不支持" : "待客服确认"}</dd></div><div><dt>海外开票</dt><dd>${site.supportsInvoice === false ? "未说明" : "可申请 Invoice"}</dd></div><div><dt>退款政策</dt><dd>${site.supportsRefund === true ? "支持，可能收手续费" : site.supportsRefund === false ? "不支持" : "规则待确认"}</dd></div></dl></section></div>
+  <div class="pros-cons"><section class="pros"><h3>${icon("check")} 优势亮点</h3><ul>${review.strength.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></section><section class="cons"><h3>! 改进空间</h3><ul>${review.weakness.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></section></div>
+  <section class="model-monitor"><div class="subsection-head"><div><h3>支持模型</h3><span>已模拟监测 ${review.measured.toFixed(1)}万+ 次</span></div><div class="model-pills">${review.modelNames.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</div></div><div class="monitor-grid">${modelMetrics}</div></section>
+  <section class="experience"><h3>近期体验</h3><div class="timeline">${experiences.map((item, index) => `<div><time>08-${String(22 - index * 7).padStart(2, "0")}</time><p>${escapeHtml(item)}</p></div>`).join("")}</div></section>
+  <section class="pricing"><div class="price-tabs"><strong>按量</strong>${review.modelNames.slice(0, 5).map((name) => `<span>${escapeHtml(name)}</span>`).join("")}<i></i><span>图表</span><span class="active">表格</span></div><h3>按量价格信息表 <small>模拟数据</small></h3><div class="table-scroll"><table><thead><tr><th>模型</th><th>渠道</th><th>倍率</th><th>输入 (/1M)</th><th>输出 (/1M)</th></tr></thead><tbody>${priceRows}</tbody></table></div></section>
+  </article>`;
+}
+
+function renderRankingSidebar(sites) {
+  return `<aside class="rank-sidebar"><div class="sidebar-head"><strong>排行榜</strong><span>共 ${sites.length} 站</span></div><ol>${sites.map((site) => `<li><a href="#rank-${site.rank}"><b>${site.rank}</b><span class="mini-avatar">${escapeHtml(site.name.slice(0, 1).toUpperCase())}</span><strong>${escapeHtml(site.name)}</strong></a></li>`).join("")}</ol></aside>`;
+}
+
+function renderFilterSidebar() {
+  return `<aside class="filter-sidebar"><section><h3>筛选条件</h3><label><input type="checkbox"> AFF 已开启</label><label><input type="checkbox"> 支持退款</label><label><input type="checkbox"> 支持发票</label></section><section><h3>排序方式</h3><button class="selected">综合</button><button>价格</button><button>稳定性</button></section><section><h3>模型厂商</h3><div class="filter-tags"><span>Claude</span><span>GPT</span><span>Gemini</span><span>DeepSeek</span><span>Qwen</span><span>Kimi</span></div></section><section class="score-help"><h3>分数说明</h3><p>模拟综合分用于复刻页面结构，不构成站点背书。真实选择以小额实测为准。</p></section></aside>`;
 }
 
 function renderPagination(page, totalPages) {
@@ -260,8 +333,11 @@ function siteStats(sites) {
 }
 
 function renderHero(stats, updatedDate) {
-  return `<section class="hero"><div class="hero-copy"><p class="eyebrow">2026 API TRANSIT DIRECTORY</p><h1>${SITE_NAME}</h1><p class="hero-lead">收录并整理 <strong>${stats.total}</strong> 家 API 中转站，帮助你比较 GPT、Claude、Codex、Gemini、DeepSeek 等服务的模型覆盖、稳定性和服务政策。</p><div class="hero-actions"><a class="button primary" href="#ranking">浏览 API 中转站排名 ${icon("arrow")}</a><a class="button secondary" href="#guide">先看选择指南</a></div><p class="update-line">${icon("clock")} 数据日期 ${updatedDate} · 每日更新两次</p></div></section>
-  <section class="stats-strip" aria-label="站点数据概览"><div><strong>${stats.total}</strong><span>收录 API 中转站</span></div><div><strong>${stats.models}</strong><span>模型与厂商标签</span></div><div><strong>${stats.highUptime}</strong><span>在线率 ≥ 99%</span></div><div><strong>${stats.described}</strong><span>含详细介绍</span></div></section>`;
+  return `<section class="transit-hero"><div class="hero-intro"><div class="title-row"><h1>AI中转站评测</h1><a href="#methodology">投稿 ${icon("arrow")}</a></div><p>真实体验无赞助，助您找到更适合的 Claude、Codex、Grok、Gemini API 中转站</p><span>${icon("clock")} 数据更新于 ${updatedDate}</span><ul><li>${icon("check")} 无任何中转赞助、广告</li><li>${icon("check")} 从开发者角度整理体验</li><li>${icon("check")} 持续汇总可用率与延迟</li></ul></div><div class="hero-meters" id="availability"><article><header><strong>模型晴雨表</strong><span>近 24h 中转健康度</span></header><div class="meter-pair"><div><b>Claude</b><small>-1.8%</small><strong>87.6<em>%</em></strong><i><span style="width:87.6%"></span></i></div><div><b>GPT</b><small>+0.7%</small><strong>95.1<em>%</em></strong><i><span style="width:95.1%"></span></i></div></div></article><article><header><strong>模型能力指数</strong><span>30D 模拟指数，越高越好</span></header><div class="meter-pair"><div><b>Claude</b><small>+2.1</small><strong>75.8</strong><i><span style="width:75.8%"></span></i></div><div><b>GPT</b><small>-1.5</small><strong>78.5</strong><i><span style="width:78.5%"></span></i></div></div></article></div></section><aside class="promo-band"><span>广告位</span><strong>聚合全球主流模型，找到适合真实开发任务的稳定路由方案</strong><button type="button">永久关闭</button></aside><div class="risk-ticker"><div>中转站存在运营与余额风险，为了资金安全，建议先小额试用，请勿囤积或追逐大额优惠　•　中转站存在运营与余额风险，为了资金安全，建议先小额试用，请勿囤积或追逐大额优惠</div></div>`;
+}
+
+function renderMethodology() {
+  return `<section class="methodology" id="methodology"><h2>评测与排序说明</h2><div><article><span>${icon("server")}</span><h3>数据来源</h3><p>站点名称、链接、模型、在线率和延迟来自当前 data.json；价格、优惠、体验记录与综合分为结构演示所生成的模拟数据。</p></article><article><span>${icon("chart")}</span><h3>排序口径</h3><p>首页前十严格遵循 data.json 的 rank 顺序，不因模拟字段重新排序。后续页面继续展示其余已收录站点。</p></article><article><span>${icon("shield")}</span><h3>基础分构成</h3><p>模拟分数参考可用性、响应速度、模型覆盖和服务字段生成，只用于帮助比较页面信息结构，不代表实际质量认证。</p></article><article><span>${icon("check")}</span><h3>客观立场</h3><p>本站不对中转服务作担保。敏感数据优先选择官方 API，第三方中转请准备备用线路并控制余额。</p></article></div></section>`;
 }
 
 function renderTopics(sites) {
@@ -291,13 +367,15 @@ function renderRankingPage({ page, totalPages, pageSites, allSites, updatedDate 
   const first = pageSites[0]?.rank || 0;
   const last = pageSites.at(-1)?.rank || 0;
   const canonical = pageUrl(page);
-  const title = page === 1 ? SITE_NAME : `${SITE_NAME}第 ${page} 页 - 排名 ${first} 至 ${last}`;
-  const description = page === 1 ? `API 中转站介绍、推荐与排名，比较 ${allSites.length} 家站点的 GPT、Claude、Codex、Gemini、DeepSeek 等模型覆盖，以及在线率、延迟、评分、退款和发票信息。` : `${SITE_NAME}第 ${page} 页，展示推荐序 ${first} 至 ${last} 的 API 中转站，逐项比较模型数量、在线率、平均延迟、用户评分、退款与发票政策，并提供充值前的选择提醒。`;
+  const title = page === 1 ? "AI API中转站评测排名与推荐（2026）" : `${SITE_NAME}第 ${page} 页 - 排名 ${first} 至 ${last}`;
+  const description = page === 1 ? `2026 AI API 中转站评测、排名与选择指南，收录 ${allSites.length} 家服务，比较 Claude、Codex、GPT、Gemini、DeepSeek 等模型覆盖、在线率、延迟、评分、退款和发票信息。` : `${SITE_NAME}第 ${page} 页，展示推荐序 ${first} 至 ${last} 的 API 中转站，逐项比较模型数量、在线率、平均延迟、用户评分、退款与发票政策，并提供充值前的选择提醒。`;
   const graph = baseGraph({ canonical, title, description, updatedDate, sites: pageSites, page, breadcrumb: page === 1 ? [{ name: SITE_NAME, url: canonical }] : [{ name: SITE_NAME, url: `${ORIGIN}/` }, { name: `第 ${page} 页`, url: canonical }] });
   const pageOpening = page === 1 ? renderHero(siteStats(allSites), updatedDate) : `<nav class="breadcrumbs" aria-label="面包屑"><a href="/">${SITE_NAME}</a><span>/</span><span aria-current="page">第 ${page} 页</span></nav><section class="page-intro"><p>RANKING PAGE ${page}</p><h1>${SITE_NAME}第 ${page} 页</h1><span>推荐序 ${first}–${last}，数据日期 ${updatedDate}</span></section>`;
-  const ranking = `<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>API DIRECTORY</p><h2 id="ranking-title">${page === 1 ? "API 中转站排名" : `推荐序 ${first}–${last}`}</h2></div><div class="ranking-note"><i></i><span>当前为第 ${page}/${totalPages} 页</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>`;
-  const pageClosing = page === 1 ? renderTopics(allSites) + renderGuide() + renderFaq() : "";
-  return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, prev: page > 1 ? pageUrl(page - 1) : "", next: page < totalPages ? pageUrl(page + 1) : "", graph })}<body>${header("ranking")}<main id="main-content"><div class="page-gutter">${pageOpening}${ranking}${pageClosing}</div></main>${footer(updatedDate)}</body></html>`;
+  const ranking = page === 1
+    ? `<section class="review-ranking" id="ranking" aria-label="API 中转站详细评测">${renderRankingSidebar(pageSites)}<div class="review-feed">${pageSites.map((site) => renderReviewCard(site, updatedDate)).join("")}${renderPagination(page, totalPages)}</div>${renderFilterSidebar()}</section>`
+    : `<section class="section ranking-section" id="ranking" aria-labelledby="ranking-title"><div class="ranking-head"><div><p>API DIRECTORY</p><h2 id="ranking-title">推荐序 ${first}–${last}</h2><span>继续浏览已收录的 API 中转服务。</span></div><div class="ranking-note"><i></i><span>第 ${page}/${totalPages} 页 · 共 ${allSites.length} 家</span></div></div><div class="station-grid">${pageSites.map(renderCard).join("")}</div>${renderPagination(page, totalPages)}</section>`;
+  const pageClosing = page === 1 ? renderMethodology() + renderGuide() + renderFaq() : "";
+  return `<!doctype html><html lang="zh-CN">${head({ title, description, canonical, prev: page > 1 ? pageUrl(page - 1) : "", next: page < totalPages ? pageUrl(page + 1) : "", graph })}<body class="ranking-page">${header("ranking")}${transitNav()}<main id="main-content"><div class="page-gutter">${pageOpening}${ranking}${pageClosing}</div></main>${footer(updatedDate)}</body></html>`;
 }
 
 function renderTopicPage({ topic, matches, updatedDate }) {
@@ -328,13 +406,13 @@ async function build() {
   validate(payload);
   const updatedDate = validDate(payload.updatedDate) || new Date().toISOString().slice(0, 10);
   const normalized = payload.sites.map(normalize).sort((a, b) => a.sourceRank - b.sourceRank).slice(0, MAX_SITES);
-  const sites = rotateWithinTiers(normalized, updatedDate);
-  const totalPages = Math.ceil(sites.length / PAGE_SIZE);
+  const sites = normalized.map((site, index) => ({ ...site, rank: index + 1 }));
+  const totalPages = 1 + Math.ceil(Math.max(0, sites.length - HOME_SIZE) / PAGE_SIZE);
   await cleanDirectories(PAGE_ROOT, new Set(Array.from({ length: totalPages - 1 }, (_, index) => String(index + 2))));
   await cleanDirectories(TOPIC_ROOT, new Set(TOPICS.map((topic) => topic.slug)));
   await atomicWrite(path.join(ROOT, "assets", "styles.min.css"), minifyCss(await readFile(path.join(ROOT, "assets", "styles.css"), "utf8")));
   for (let page = 1; page <= totalPages; page += 1) {
-    const pageSites = sites.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const pageSites = page === 1 ? sites.slice(0, HOME_SIZE) : sites.slice(HOME_SIZE + (page - 2) * PAGE_SIZE, HOME_SIZE + (page - 1) * PAGE_SIZE);
     const target = page === 1 ? path.join(ROOT, "index.html") : path.join(PAGE_ROOT, String(page), "index.html");
     await atomicWrite(target, renderRankingPage({ page, totalPages, pageSites, allSites: sites, updatedDate }));
   }

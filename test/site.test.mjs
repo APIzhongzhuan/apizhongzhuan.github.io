@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const data = JSON.parse(await readFile(path.join(root, "data.json"), "utf8"));
 const totalSites = Math.min(360, data.sites.length);
-const totalPages = Math.ceil(totalSites / 40);
+const totalPages = 1 + Math.ceil(Math.max(0, totalSites - 10) / 40);
 const origin = "https://apizhongzhuan.github.io";
 const topics = ["gpt", "claude", "codex", "gemini", "deepseek", "qwen", "kimi"];
 
@@ -21,18 +21,18 @@ function jsonLd(html) {
   return JSON.parse(match[1]);
 }
 
-test("homepage title and primary heading are exact", async () => {
+test("homepage title and primary heading target AI transit ranking intent", async () => {
   const html = await htmlFor(1);
-  assert.ok(html.includes("<title>API中转站介绍和推荐</title>"));
+  assert.ok(html.includes("<title>AI API中转站评测排名与推荐（2026）</title>"));
   assert.equal((html.match(/<h1(?:\s|>)/g) || []).length, 1);
-  assert.ok(html.includes("<h1>API中转站介绍和推荐</h1>"));
+  assert.ok(html.includes("<h1>AI中转站评测</h1>"));
 });
 
 test("static ranking displays no more than 360 unique sites", async () => {
   const ranks = [];
   for (let page = 1; page <= totalPages; page += 1) {
     const html = await htmlFor(page);
-    const pageRanks = [...html.matchAll(/<article class="station-card" id="rank-(\d+)"/g)].map((match) => Number(match[1]));
+    const pageRanks = [...html.matchAll(/<article class="(?:station-card[^"]*|review-card)" id="rank-(\d+)"/g)].map((match) => Number(match[1]));
     assert.ok(pageRanks.length > 0 && pageRanks.length <= 40);
     ranks.push(...pageRanks);
     assert.doesNotMatch(html, /<script(?! type="application\/ld\+json")/);
@@ -42,7 +42,7 @@ test("static ranking displays no more than 360 unique sites", async () => {
   assert.deepEqual(ranks, Array.from({ length: totalSites }, (_, index) => index + 1));
 });
 
-test("ranking is shuffled while staying within ten-site source tiers", async () => {
+test("ranking preserves data order and top ten official links", async () => {
   const sourceRanks = [];
   for (let page = 1; page <= totalPages; page += 1) {
     const html = await htmlFor(page);
@@ -53,15 +53,21 @@ test("ranking is shuffled while staying within ten-site source tiers", async () 
       sourceRanks.push(source);
     }
   }
-  assert.notDeepEqual(sourceRanks, Array.from({ length: totalSites }, (_, index) => index + 1));
+  assert.deepEqual(sourceRanks, Array.from({ length: totalSites }, (_, index) => index + 1));
+  const homepage = await htmlFor(1);
+  for (const site of data.sites.slice(0, 10)) {
+    const card = homepage.match(new RegExp(`data-source-rank="${site.rank}"[\\s\\S]*?</article>`))?.[0] || "";
+    assert.ok(card.includes(`href="${site.url}"`), `top ${site.rank} should link to its data.json URL`);
+    assert.ok(card.includes("访问官网"));
+  }
 });
 
 test("homepage ranking appears before user-facing sections", async () => {
   const html = await htmlFor(1);
   const ranking = html.indexOf('id="ranking"');
-  const topics = html.indexOf('class="section topics-section"');
+  const methodology = html.indexOf('id="methodology"');
   const guide = html.indexOf('id="guide"');
-  assert.ok(ranking > 0 && ranking < topics && topics < guide);
+  assert.ok(ranking > 0 && ranking < methodology && methodology < guide);
   assert.doesNotMatch(html, /纯静态 HTML|无需脚本|同档轻量轮换|GitHub Pages|GitHub Actions/);
 });
 
