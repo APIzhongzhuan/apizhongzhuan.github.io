@@ -4,18 +4,21 @@ API 中转站介绍、推荐与排名站点，部署到 GitHub Pages。
 
 ## 特性
 
-- 首页标题固定为“API中转站介绍和推荐”
-- 最多展示 360 家站点，每页 40 家
-- 每 10 个相邻站点组成一个档位，在档位内做确定性稳定洗牌
+- 最多展示 360 家站点，首页详细展示前 10 家，后续每页 40 家
+- 默认遵循数据快照的排名顺序
 - 卡片简介由结构化指标重新生成，不直接复用数据快照中的描述原文
 - GPT、Claude、Codex、Gemini、DeepSeek、Qwen、Kimi 静态专题页
 - Canonical、Open Graph、Twitter Card、JSON-LD、FAQ、分页关系、robots.txt 和 sitemap.xml
-- 无客户端 JavaScript，完整内容直接写入 HTML
+- 完整内容直接写入 HTML；客户端 JavaScript 增强全站搜索、模型/退款/发票组合筛选、指标排序、结果分页和简约表格
+- 筛选条件保存在 URL，支持刷新和分享；专题页限定在当前专题筛选
+- 首页价格支持模型筛选、价格排序及卡片内图表切换；广告关闭状态保存在当前浏览器
+- 公开筛选索引为 `assets/directory.json`，随构建更新，不依赖发布原始数据快照；脚本不可用时仍可浏览静态榜单
 - GitHub Actions 每天北京时间约 09:17 和 21:17 同步并部署
 
 ## 本地使用
 
 ```bash
+npm ci
 npm run build
 npm test
 ```

@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install test dependencies
+        run: npm ci
+
       - name: Build static HTML
         run: |
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then

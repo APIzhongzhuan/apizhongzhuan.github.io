@@ -35,7 +35,7 @@ test("static ranking displays no more than 360 unique sites", async () => {
     const pageRanks = [...html.matchAll(/<article class="(?:station-card[^"]*|review-card)" id="rank-(\d+)"/g)].map((match) => Number(match[1]));
     assert.ok(pageRanks.length > 0 && pageRanks.length <= 40);
     ranks.push(...pageRanks);
-    assert.doesNotMatch(html, /<script(?! type="application\/ld\+json")/);
+    assert.match(html, /<script type="module" src="\/assets\/site.js"><\/script>/);
   }
   assert.equal(ranks.length, totalSites);
   assert.equal(new Set(ranks).size, totalSites);
