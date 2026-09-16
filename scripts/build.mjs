@@ -10,6 +10,17 @@ const TOPIC_ROOT = path.join(ROOT, "topics");
 const SOURCE_URL = process.env.DATA_SOURCE_URL || "https://raw.githubusercontent.com/hvoyai/awesome-ai-api/main/data.json";
 const ORIGIN = "https://apizhongzhuan.github.io";
 const SITE_NAME = "API中转站介绍和推荐";
+const BAIDU_TONGJI_SCRIPT = [
+  "<script>",
+  "var _hmt = _hmt || [];",
+  "(function() {",
+  "  var hm = document.createElement(\"script\");",
+  "  hm.src = \"https://hm.baidu.com/hm.js?129f4a309cba203fc8a37297aa9d1cbe\";",
+  "  var s = document.getElementsByTagName(\"script\")[0];",
+  "  s.parentNode.insertBefore(hm, s);",
+  "})();",
+  "</script>",
+].join("\n");
 const MAX_SITES = 360;
 const PAGE_SIZE = 40;
 const HOME_SIZE = 10;
@@ -248,6 +259,7 @@ function head({ title, description, canonical, type = "website", prev = "", next
   <link rel="stylesheet" href="/assets/styles.min.css">
   <script type="module" src="/assets/site.js"></script>
   <script type="application/ld+json">${jsonLd({ "@context": "https://schema.org", "@graph": graph })}</script>
+  ${BAIDU_TONGJI_SCRIPT}
 </head>`;
 }
 
