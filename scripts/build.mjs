@@ -44,7 +44,7 @@ const FAQ = [
   ["低倍率等于官方价格打折吗？", "不一定。实际成本还取决于余额兑换比例、输入输出分别计费、缓存费用、分组倍率和套餐规则。比较价格时应以同一组请求的最终账单为准。"],
   ["使用中转站有哪些风险？", "常见风险包括上游变化、模型映射不透明、余额无法退回、日志留存、限流、账号池波动和服务停止。敏感数据与关键业务更适合官方 API 或可审计的合规服务。"],
   ["如何判断模型是否被替换？", "不要只依赖模型自报身份。应准备固定测试集，长期比较上下文、工具调用、结构化输出、视觉能力、响应特征与账单，并在异常时保留请求 ID 复测。"],
-  ["数据多久更新一次？", "榜单通常每天更新两次，页面会显示当前数据日期。在线率、延迟、价格和站点政策都可能变化，使用前请再次核对。"]
+  ["数据多久更新一次？", "榜单每天更新一次，页面会显示当前数据日期。在线率、延迟、价格和站点政策都可能变化，使用前请再次核对。"]
 ];
 
 function escapeHtml(value) {
@@ -89,6 +89,7 @@ function normalize(site, index) {
 
 function validate(payload) {
   if (!payload || !Array.isArray(payload.sites) || !payload.sites.length) throw new Error("数据缺少非空 sites 数组");
+  if (!validDate(payload.updatedDate)) throw new Error("数据缺少有效 updatedDate");
   for (const [index, site] of payload.sites.entries()) {
     if (!site?.name || !safeUrl(site.url)) throw new Error(`第 ${index + 1} 条数据无效`);
   }
@@ -120,18 +121,8 @@ async function fetchSnapshot() {
 }
 
 async function syncData() {
-  try {
-    const payload = await fetchSnapshot();
-    await atomicWrite(DATA_PATH, `${JSON.stringify(payload, null, 2)}\n`);
-    return;
-  } catch (error) {
-    try {
-      const current = JSON.parse(await readFile(DATA_PATH, "utf8"));
-      validate(current);
-      process.stderr.write(`同步失败，继续使用已验证快照：${error.message}\n`);
-      return;
-    } catch { throw error; }
-  }
+  const payload = await fetchSnapshot();
+  await atomicWrite(DATA_PATH, `${JSON.stringify(payload, null, 2)}\n`);
 }
 
 function hash(text) {
